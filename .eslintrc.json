@@ -1,0 +1,38 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier"
+  ],
+  "rules": {
+    "padding-line-between-statements": ["error",
+      { "blankLine": "always", "prev": ["const", "let", "var"], "next": "*"},
+      { "blankLine": "any",    "prev": ["const", "let", "var"], "next": ["const", "let", "var"]},
+      { "blankLine": "always", "prev": "function", "next": "function" }
+    ],
+    "lines-between-class-members": ["off"],
+    "@typescript-eslint/lines-between-class-members": ["error", "always"],
+    "@typescript-eslint/quotes": ["error", "single"],
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/prefer-optional-chain": "error",
+    "space-in-parens": ["warn", "always"],
+    "no-mixed-spaces-and-tabs": "warn",
+    "newline-before-return": "warn",
+    "no-trailing-spaces": "warn",
+    "newline-per-chained-call": ["warn", {
+      "ignoreChainWithDepth": 1
+    }],
+    "array-element-newline": ["warn", { "minItems": 4 }],
+    "array-bracket-newline": ["warn"],
+    "indent": ["error", 4],
+    "comma-dangle": ["warn", "always-multiline", {
+      "imports": "never",
+      "objects": "never",
+      "arrays": "never",
+      "functions": "never"
+    }]
+  }
+}
