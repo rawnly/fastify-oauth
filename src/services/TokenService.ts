@@ -1,4 +1,4 @@
-import { PrismaClient, Token } from '@prisma/client';
+import { PrismaClient, Token, TokenType } from '@prisma/client';
 
 export default class TokenService {
     constructor( private prisma: PrismaClient ) {}
@@ -10,7 +10,8 @@ export default class TokenService {
     async save(
         token: string,
         expiration: number,
-        userId: number
+        userId: number,
+        type: TokenType = TokenType.JWT
     ): Promise<Token> {
         return await this.prisma.token.create( {
             data: {
@@ -18,14 +19,26 @@ export default class TokenService {
                 value: token,
                 issuedAt: new Date(),
                 expirationDate: new Date( Date.now() + expiration ),
+                type,
             },
         } );
     }
 
-    async invalidateTokensOfUser( userId: number ): Promise<void> {
+    findByValueAndType( value: string, type: TokenType ): Promise<Token> {
+        return this.prisma.token.findFirst( {
+            rejectOnNotFound: true,
+            where: {
+                value,
+                type,
+            },
+        } );
+    }
+
+    async invalidateJWTsOfUser( userId: number ): Promise<void> {
         await this.prisma.token.updateMany( {
             where: {
                 userId,
+                type: TokenType.JWT,
             },
             data: {
                 valid: false,
@@ -40,7 +53,19 @@ export default class TokenService {
             },
         } );
 
-        return tkn !== null ? tkn.valid : false;
+        if ( tkn === null ) return false;
+
+        return tkn.expirationDate.getTime() < Date.now() && tkn.valid;
+    }
+
+    async useRefreshToken( refreshToken: string, userId: number ): Promise<void> {
+        const isValidToken = await this.isValid( refreshToken );
+
+        if ( !isValidToken ) {
+            throw new Error( 'Not a valid Refresh Token' );
+        }
+
+        await this.invalidateJWTsOfUser( userId );
     }
 
     async delete( token: string ): Promise<Token> {

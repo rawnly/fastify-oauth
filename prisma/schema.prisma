@@ -10,6 +10,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum TokenType {
+  JWT
+  REFRESH_TOKEN
+}
+
 model App {
   id            Int      @id @default(autoincrement())
   client_id     String   @unique @db.VarChar(255)
@@ -37,11 +42,12 @@ model User {
 }
 
 model Token {
-  id             Int      @id @default(autoincrement())
-  value          String   @unique @db.VarChar(255)
-  issuedAt       DateTime @default(now())
-  expirationDate DateTime @db.Timestamp
-  valid          Boolean  @default(true)
+  id             Int       @id @default(autoincrement())
+  value          String    @unique @db.VarChar(255)
+  issuedAt       DateTime  @default(now())
+  expirationDate DateTime  @db.Timestamp
+  valid          Boolean   @default(true)
+  type           TokenType @default(JWT)
 
   user   User @relation(fields: [userId], references: [id])
   userId Int

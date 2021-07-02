@@ -12,39 +12,30 @@ type SignupPayload = {
     email: string;
 };
 
+type RefreshToken_Payload = {
+    refreshToken: string;
+};
+
 const Router: FastifyPluginCallback = ( fastify, _, next ) => {
     fastify.post(
         '/sign-in',
-        async ( req: FastifyRequest<{ Body: LoginPayload }>, reply ) => {
+        async ( req: FastifyRequest<{ Body: LoginPayload }>, res ) => {
             const user = await fastify.services.user.login(
                 req.body.email,
                 req.body.password
             );
 
             if ( !user ) {
-                return reply.status( 401 )
+                return res.status( 401 )
                     .send( {
                         message: 'Invalid Credentials',
                         status: 401,
                     } );
             }
 
-            const token = await reply.jwtSign( {
-                id: user.id,
-            } );
+            await fastify.services.token.invalidateJWTsOfUser( user.id );
 
-            await fastify.services.token.invalidateTokensOfUser( user.id );
-
-            await fastify.services.token.save(
-                token,
-                fastify.utils.ms( '5min' ),
-                user.id
-            );
-
-            return {
-                token,
-                expires_in: fastify.utils.ms( '5min' ),
-            };
+            return await res.generateJwt( user.id, true );
         }
     );
 
@@ -53,18 +44,21 @@ const Router: FastifyPluginCallback = ( fastify, _, next ) => {
         async ( req: FastifyRequest<{ Body: SignupPayload }>, res ) => {
             const user = await fastify.services.user.save( req.body );
 
-            const token = await res.jwtSign( { id: user.id } );
+            return await res.generateJwt( user.id, true );
+        }
+    );
 
-            await fastify.services.token.save(
-                token,
-                fastify.utils.ms( '5min' ),
-                user.id
-            );
+    fastify.post(
+        '/refresh-token',
+        async ( req: FastifyRequest<{ Body: RefreshToken_Payload }>, res ) => {
+            req.authorized();
 
-            return {
-                token,
-                expires_in: fastify.utils.ms( '5min' ),
-            };
+            const { refreshToken } = req.body;
+            const { id: userId } = req.user;
+
+            await fastify.services.token.useRefreshToken( refreshToken, userId );
+
+            return await res.generateJwt( userId, false );
         }
     );
 

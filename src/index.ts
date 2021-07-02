@@ -3,12 +3,15 @@ import pino from 'pino';
 import { PrismaClient } from '@prisma/client';
 import fastifyJWT from 'fastify-jwt';
 import fastifyMetrics from 'fastify-metrics';
-import fastifyServices from './plugins/fastify-services';
 import ms from 'ms';
-import TokenService from './services/TokenService';
 
-import AppRouter from './routers/app-router';
-import AuthRouter from './routers/auth-router';
+import {
+    AppRouter as AppController,
+    AuthRouter as AuthController,
+} from './routers';
+
+import { fastifyServices, fastifyAuth } from './plugins';
+import { TokenService } from './services';
 
 const server = fastify( {
     logger: pino( {
@@ -20,6 +23,7 @@ const server = fastify( {
 } );
 
 server
+    .register( fastifyAuth )
     .register( fastifyMetrics, {
         endpoint: '/metrics',
     } )
@@ -44,9 +48,10 @@ server
         },
     } );
 
+// Controllers
 server
-    .register( AppRouter, { prefix: '/app' } )
-    .register( AuthRouter, { prefix: '/auth' } );
+    .register( AppController, { prefix: '/app' } )
+    .register( AuthController, { prefix: '/auth' } );
 
 server.listen( process.env.PORT || 3000, ( err ) => {
     if ( err ) server.log.error( err );
@@ -55,6 +60,8 @@ server.listen( process.env.PORT || 3000, ( err ) => {
 
 declare module 'fastify-jwt' {
     interface FastifyJWT {
-        payload: { id: number };
+        payload: {
+            id: number; // userId
+        };
     }
 }

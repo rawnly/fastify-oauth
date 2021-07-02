@@ -1,21 +1,24 @@
-import AppService from '../services/AppService';
-import UserService from '../services/UserService';
-
+import ms from 'ms';
 import fp from 'fastify-plugin';
 import { FastifyPluginCallback } from 'fastify';
+
 import { PrismaClient } from '.prisma/client';
-import ms from 'ms';
-import TokenService from '@src/services/TokenService';
+
+import { AppService, TokenService, UserService } from '../services';
 
 type Options = {
     prismaClient: PrismaClient;
 };
 
-const plugin: FastifyPluginCallback<Options> = ( fastify, o, next ) => {
+const plugin: FastifyPluginCallback<Options> = (
+    fastify,
+    { prismaClient },
+    next
+) => {
     fastify.decorate( 'services', {
-        user: new UserService( o.prismaClient ),
-        app: new AppService( o.prismaClient ),
-        token: new TokenService( o.prismaClient ),
+        user: new UserService( prismaClient ),
+        app: new AppService( prismaClient ),
+        token: new TokenService( prismaClient ),
     } );
 
     fastify.decorate( 'utils', {
